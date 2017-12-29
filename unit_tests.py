@@ -1,6 +1,6 @@
 import unittest
 """
-Unit Test file for alert.py
+Unit Test file.
 """
 class alertTests(unittest.TestCase):
     def test_startup(self):
