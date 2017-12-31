@@ -43,11 +43,28 @@ def init()->None:
     config_parser = ConfigParser()
     log.info("Init: reading config file...")
     config = config_parser.read('config.ini')
-    if config == []:
-        # config was null, first run ?
-        section = 'files'
-        config_parser.add_section(section)
-        config_parser.set(section=section, option='channel_fuelrats', value='/path/to/#fuelrats')
+    if config == [] :
+        log.warning("Config file not found. generating defaults...")
+        with open('config.ini', 'w'):
+            log.warning("config file was not found or blank. writing new...")
+            # config was null, first run ?
+            section = 'files'
+            config_parser.add_section(section)
+            config_parser.set(section=section, option='channel_fuelrats', value='/path/to/#fuelrats')
+            config_parser.write('config.ini')
+    try:
+        log.debug("fetching log data....")
+        logfile = config_parser.get('files', 'channel_fuelrats')
+        log.info("got logfile data, path is {}".format(logfile))
+    except Exception as ex:
+        log.critical("Unable to find log file configuration.")
+        with open('config.ini', 'w') as file:
+            log.warning("config file was not found or blank. writing new...")
+            # config was null, first run ?
+            section = 'files'
+            config_parser.add_section(section)
+            config_parser.set(section=section, option='channel_fuelrats', value='/path/to/#fuelrats')
+            config_parser.write(file)
     log.warning(config)
 
 
