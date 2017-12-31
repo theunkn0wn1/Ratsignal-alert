@@ -30,13 +30,8 @@ log.setLevel(logging.DEBUG)
 log.addHandler(streamHandle)
 log.addHandler(fileHandle)
 
-
-log.error("HO")
-log.log(logging.INFO, "potato")
-print(log)
 log.info("log setup done.")
 # logging.basicConfig(level=logging.WARNING)
-
 
 
 def init()->None:
@@ -48,10 +43,16 @@ def init()->None:
     config_parser = ConfigParser()
     log.info("Init: reading config file...")
     config = config_parser.read('config.ini')
+    if config == []:
+        # config was null, first run ?
+        section = 'files'
+        config_parser.add_section(section)
+        config_parser.set(section=section, option='channel_fuelrats', value='/path/to/#fuelrats')
     log.warning(config)
 
+
 if __name__ == "__main__":
-    pass
+    init()
 
 # import time
 #
