@@ -11,7 +11,7 @@ from utils.playground.shared_resources import Parser, Case
 
 # setup log
 
-logging.basicConfig(format="%(levelname)s :%(message)s", level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s :%(message)s", level=logging.ERROR)
 
 #create a stream handler
 streamHandle = logging.StreamHandler(sys.stdout)
@@ -33,6 +33,11 @@ log.addHandler(fileHandle)
 log.info("log setup done.")
 # logging.basicConfig(level=logging.WARNING)
 
+class config_error(Exception):
+    """
+    generic config error
+    """
+    pass
 
 def init()->None:
     """
@@ -68,7 +73,50 @@ def init()->None:
     log.warning(config)
 
 
+def make_default_config_file(parser:ConfigParser, filename ='config.ini', filemode = 'w')->None:
+    """
+    Generates a default config filename
+    :param parser: config parser instance
+    :param filename: config filename by name to write to
+    :param filemode: mode to open file, must be capable of writing
+    :return: None
+    """
+
+    # make filename configs
+    section = 'files'
+    log.info("making {} configs....".format(section))
+    parser.add_section(section)
+    parser.set(section, 'channel_fuelrats', "/path/to/#fuelrats.txt")
+    parser.set(section, "alarm_sound", "/path/to/alarms/")
+
+    # make options configs
+    section = 'options'
+    log.info("making {} configs....".format(section))
+    parser.add_section("filter")
+    parser.set(section, 'onPlatform', False)
+    parser.set(section, "platform", "pc")
+    parser.set(section, "onLanguage", False)
+    parser.set(section, "language", "en")
+    parser.set(section, "onCodeRed", False)
+    log.info("done initializing new configs, writing to disk.")
+    # write to config filename
+    try:
+        with open(filename,filemode) as file:
+            parser.write(file)
+    except Exception as ex:
+        log.fatal("Unable to write config filename, error is as follows:")
+        log.error(str(ex))
+        raise config_error("Error opening/writing config filename")
+
+
 if __name__ == "__main__":
+    args = sys.argv
+    if len(args)-1 >=1:
+        # we have CLI arguments
+        log.debug(args)
+        pass
+    log.debug("No CLI arguments")
+
     init()
 
 # import time
