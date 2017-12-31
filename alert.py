@@ -89,35 +89,20 @@ def make_default_config_file(parser:ConfigParser=None, filename ='config.ini', f
         raise InvalidConfigurationException("Error opening/writing config filename")
 
 
-if __name__ == "__main__":
-    args = sys.argv
-    if len(args)-1 >=1:
-        # we have CLI arguments
-        log.debug("got CLI arguments, arguments are {}".format(args[1:]))
-        log.debug(args)
-        if "-make" in args:
-            log.info("making default configs...")
-            make_default_config_file()
-            import sys
-            sys.exit(0)
-
-    else:
-        log.debug("No CLI arguments")
-        print("No arguments. using runtime configs...")
-    # init()
-def worker(parser:ConfigParser):
+def worker(parser:ConfigParser, config_file:str = "config.ini"):
     import time
     log.debug("entering worker")
     filename = None
     try:
+        log.debug("opening logfile for reading...")
+        parser.read(config_file)
         filename = parser.get('files','channel_fuelrats')
         log.debug("filename is {}".format(filename))
         with open(filename,'r'):
-            log.info("sucessfully opened logfile")
+            log.info("successfully opened logfile")
     except FileNotFoundError as ex:
         log.error("unable to find file {}. please check the config and try again.".format(filename))
-        raise InvalidConfigurationException("unable to find file {}. please check the config and try again.".format(
-                filename))
+        return -2
 
     except Exception as ex:
         log.error(ex)
@@ -133,10 +118,34 @@ def worker(parser:ConfigParser):
                     time.sleep(1)
                     file.seek(where)
                 else:
-                    print()
-                    print(line)  # already has newline
+                    log.debug(line)  # already has newline
     except TypeError as ex:
         log.error("type error occured, probably misconfigured filename?\n{}".format(ex))
     except KeyboardInterrupt:
         log.info("Keyboard interrupt. shutting down...")
         sys.exit(1)
+
+
+
+if __name__ == "__main__":
+    args = sys.argv
+    log.debug("(MAIN) creating new ConfigParser instance")
+    parser = ConfigParser()
+    log.debug("reading CLI arguments...")
+    if len(args)-1 >=1:
+        # we have CLI arguments
+        log.debug("got CLI arguments, arguments are {}".format(args[1:]))
+        log.debug(args)
+        if "-make" in args:
+            log.info("making default configs...")
+            make_default_config_file(parser=parser)
+            import sys
+            sys.exit(0)
+        elif "-work" in args:
+            log.info("Running worker....")
+            worker(parser=parser)
+
+    else:
+        log.debug("No CLI arguments")
+        print("No arguments. using runtime configs...")
+    # init()
