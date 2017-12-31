@@ -111,17 +111,21 @@ def worker(parser:ConfigParser, config_file:str = "config.ini"):
     log.debug("attempting to open file object from configs for reading...")
     try:
         with open(filename, encoding='cp850') as file:
-            eol_reached =False
+            eof_reached =False
             while 1:
                 where = file.tell()
                 line = file.readline()
                 if not line:
-                    eol_reached=True
+                    # log.info("read to EOL, listening for new data...")
+                    if not eof_reached:
+                        eof_reached = True
+                        log.info("reached EOF, listening...")
                     time.sleep(1)
                     file.seek(where)
                 else:
-                    if eol_reached:
-                        log.debug(line)  # already has newline
+                    if eof_reached:
+                        log.debug("parsed data is {}".format(Parser.parse(data=line)))
+                        # log.debug(line)  # already has newline
     except TypeError as ex:
         log.error("type error occured, probably misconfigured filename?\n{}".format(ex))
     except KeyboardInterrupt:
