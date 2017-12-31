@@ -33,44 +33,22 @@ log.addHandler(fileHandle)
 log.info("log setup done.")
 # logging.basicConfig(level=logging.WARNING)
 
-class config_error(Exception):
+
+class InvalidConfigurationException(Exception):
     """
     generic config error
     """
     pass
+
 
 def init()->None:
     """
     Module init
     :return: None
     """
-    log.debug("Init: creating config parser....")
-    config_parser = ConfigParser()
-    log.info("Init: reading config file...")
-    # config = config_parser.read('config.ini')
-    # if config == [] :
-    #     log.warning("Config file not found. generating defaults...")
-    #     with open('config.ini', 'w'):
-    #         log.warning("config file was not found or blank. writing new...")
-    #         # config was null, first run ?
-    #         section = 'files'
-    #         config_parser.add_section(section)
-    #         config_parser.set(section=section, option='channel_fuelrats', value='/path/to/#fuelrats')
-    #         config_parser.write('config.ini')
-    # try:
-    #     log.debug("fetching log data....")
-    #     logfile = config_parser.get('files', 'channel_fuelrats')
-    #     log.info("got logfile data, path is {}".format(logfile))
-    # except Exception as ex:
-    #     log.critical("Unable to find log file configuration.")
-    #     with open('config.ini', 'w') as file:
-    #         log.warning("config file was not found or blank. writing new...")
-    #         # config was null, first run ?
-    #         section = 'files'
-    #         config_parser.add_section(section)
-    #         config_parser.set(section=section, option='channel_fuelrats', value='/path/to/#fuelrats')
-    #         config_parser.write(file)
-    # log.warning(config)
+    # log.debug("Init: creating config parser....")
+    # config_parser = ConfigParser()
+    # log.info("Init: reading config file...")
 
 
 def make_default_config_file(parser:ConfigParser=None, filename ='config.ini', filemode = 'w')->None:
@@ -82,6 +60,7 @@ def make_default_config_file(parser:ConfigParser=None, filename ='config.ini', f
     :return: None
     """
     if not parser:
+        log.debug("no parser provided, creating new instance")
         parser = ConfigParser()
     # make filename configs
     section = 'files'
@@ -107,7 +86,7 @@ def make_default_config_file(parser:ConfigParser=None, filename ='config.ini', f
     except Exception as ex:
         log.fatal("Unable to write config filename, error is as follows:")
         log.error(str(ex))
-        raise config_error("Error opening/writing config filename")
+        raise InvalidConfigurationException("Error opening/writing config filename")
 
 
 if __name__ == "__main__":
@@ -117,20 +96,47 @@ if __name__ == "__main__":
         log.debug("got CLI arguments, arguments are {}".format(args[1:]))
         log.debug(args)
         if "-make" in args:
+            log.info("making default configs...")
             make_default_config_file()
-        pass
+            import sys
+            sys.exit(0)
+
     else:
         log.debug("No CLI arguments")
+        print("No arguments. using runtime configs...")
+    # init()
+def worker(parser:ConfigParser):
+    import time
+    log.debug("entering worker")
+    filename = None
+    try:
+        filename = parser.get('files','channel_fuelrats')
+        log.debug("filename is {}".format(filename))
+        with open(filename,'r'):
+            log.info("sucessfully opened logfile")
+    except FileNotFoundError as ex:
+        log.error("unable to find file {}. please check the config and try again.".format(filename))
+        raise InvalidConfigurationException("unable to find file {}. please check the config and try again.".format(
+                filename))
 
-    init()
+    except Exception as ex:
+        log.error(ex)
+        raise ex
 
-# import time
-#
-# while 1:
-#     where = file.tell()
-#     line = file.readline()
-#     if not line:
-#         time.sleep(1)
-#         file.seek(where)
-#     else:
-#         print line, # already has newline
+    log.debug("attempting to open file object from configs for reading...")
+    try:
+        with open(filename) as file:
+            while 1:
+                where = file.tell()
+                line = file.readline()
+                if not line:
+                    time.sleep(1)
+                    file.seek(where)
+                else:
+                    print()
+                    print(line)  # already has newline
+    except TypeError as ex:
+        log.error("type error occured, probably misconfigured filename?\n{}".format(ex))
+    except KeyboardInterrupt:
+        log.info("Keyboard interrupt. shutting down...")
+        sys.exit(1)
