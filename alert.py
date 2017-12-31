@@ -98,7 +98,7 @@ def worker(parser:ConfigParser, config_file:str = "config.ini"):
         parser.read(config_file)
         filename = parser.get('files','channel_fuelrats')
         log.debug("filename is {}".format(filename))
-        with open(filename,'r'):
+        with open(filename,'r', encoding='cp850'):
             log.info("successfully opened logfile")
     except FileNotFoundError as ex:
         log.error("unable to find file {}. please check the config and try again.".format(filename))
@@ -110,15 +110,18 @@ def worker(parser:ConfigParser, config_file:str = "config.ini"):
 
     log.debug("attempting to open file object from configs for reading...")
     try:
-        with open(filename) as file:
+        with open(filename, encoding='cp850') as file:
+            eol_reached =False
             while 1:
                 where = file.tell()
                 line = file.readline()
                 if not line:
+                    eol_reached=True
                     time.sleep(1)
                     file.seek(where)
                 else:
-                    log.debug(line)  # already has newline
+                    if eol_reached:
+                        log.debug(line)  # already has newline
     except TypeError as ex:
         log.error("type error occured, probably misconfigured filename?\n{}".format(ex))
     except KeyboardInterrupt:
